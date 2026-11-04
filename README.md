@@ -17,12 +17,30 @@ pedal and the ones after it are re-simulated.
 
 ## Running it
 
-You need Python 3.10+ and ngspice (`brew install ngspice`). LTspice is
-optional, but it's needed to read `.asc` schematics.
+You need Python 3.10+ and ngspice. LTspice is optional, but it's needed to
+read `.asc` schematics.
+
+**macOS**
 
 ```bash
+brew install ngspice
 python3 run.py
 ```
+
+**Windows**
+
+1. Install Python from python.org (tick "Add python.exe to PATH").
+2. Download the ngspice Windows build (`ngspice-NN_64.7z` from
+   ngspice.sourceforge.io) and extract it so you have
+   `C:\Spice64\bin\ngspice_con.exe`. SpiceChain also finds it on `PATH`, or
+   set `SPICECHAIN_NGSPICE` to the exe.
+3. In Command Prompt or PowerShell, from the repo folder:
+
+```bash
+py run.py
+```
+
+Everywhere below, Windows users type `py` where it says `python3`.
 
 There's nothing to install. On the first run, `run.py` creates a `.venv` in
 the repo and installs `requirements.txt` into it.
@@ -44,7 +62,8 @@ You get the banner, the chain drawn left to right
   4) Move pedal
 ```
 
-You can drag files in from Finder when it asks for a path. The output file
+You can drag files in from Finder or Explorer when it asks for a path, or
+press `f` for a file dialog. The output file
 must end in `.wav`, `.flac`, `.aif`, `.aiff` or `.ogg`.
 
 ### One-shot
@@ -102,9 +121,10 @@ Your schematics can be left the way you'd simulate them in LTspice.
   LTspice-only op-amp models (like the ADTL082) are swapped for a generic
   TL08x-class op-amp. On the Blues Driver and Phase 90 the result matches
   LTspice almost exactly.
-- **LTspice**: on macOS, LTspice 24+ is a Windows app bundled with CrossOver.
-  SpiceChain runs it in batch mode through the bundled `wine`. It's slower
-  (about 10 s per pedal). Set `SPICECHAIN_LTSPICE` to override the path.
+- **LTspice**: about 10 s per pedal. On Windows SpiceChain runs `LTspice.exe`
+  in batch mode from its usual install folder. On macOS, LTspice 24+ is a
+  Windows app bundled with CrossOver, so SpiceChain runs it through the
+  bundled `wine`. Set `SPICECHAIN_LTSPICE` to override the path.
 
 If a part isn't in the pedal file or in LTspice's libraries, SpiceChain falls
 back to approximate models in `spicechain/models/fallback.lib` and prints a

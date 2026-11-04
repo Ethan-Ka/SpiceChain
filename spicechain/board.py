@@ -63,7 +63,7 @@ class Board:
     def load(cls, path: str | Path) -> "Board":
         path = Path(path).resolve()
         base = path.parent
-        data = yaml.safe_load(path.read_text()) or {}
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         return cls(
             input=(base / data["input"]).resolve() if data.get("input") else None,
             output=(base / data.get("output", "out.wav")).resolve(),
@@ -87,13 +87,13 @@ class Board:
             **({"duration": self.duration} if self.duration is not None else {}),
             "pedals": [p.to_dict(base) for p in self.pedals],
         }
-        path.write_text(yaml.safe_dump(data, sort_keys=False))
+        path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
         self.path = path
         return path
 
 
 def _rel(p: Path, base: Path) -> str:
     try:
-        return str(Path(p).resolve().relative_to(base))
+        return Path(p).resolve().relative_to(base).as_posix()   # / works on every OS
     except ValueError:
         return str(p)

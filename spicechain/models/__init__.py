@@ -10,6 +10,8 @@ Search order for each referenced model/subcircuit:
 For ngspice, LTspice-only syntax is translated: text-valued model params are
 dropped, µ becomes u, § in names becomes _, and op-amp subcircuits that use
 LTspice-only primitives are swapped for a generic op-amp.
+
+slop
 """
 
 from __future__ import annotations

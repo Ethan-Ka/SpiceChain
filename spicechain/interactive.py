@@ -129,24 +129,39 @@ def _list_files(exts: tuple[str, ...]) -> list[Path]:
     return list(found)
 
 
-def _finder_dialog(prompt: str, save: bool = False) -> Path | None:
-    """macOS file dialog via AppleScript. Returns None if cancelled or unavailable."""
-    if sys.platform != "darwin":
-        return None
-    verb = "choose file name" if save else "choose file"
-    script = f'POSIX path of ({verb} with prompt "{prompt}")'
-    r = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
-    return Path(r.stdout.strip()) if r.returncode == 0 and r.stdout.strip() else None
+def _file_dialog(prompt: str, save: bool = False) -> Path | None:
+    """Native file dialog: Finder on macOS (AppleScript), the standard Open/Save
+    dialog elsewhere (tkinter). Returns None if cancelled or unavailable."""
+    if sys.platform == "darwin":
+        verb = "choose file name" if save else "choose file"
+        script = f'POSIX path of ({verb} with prompt "{prompt}")'
+        r = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+        return Path(r.stdout.strip()) if r.returncode == 0 and r.stdout.strip() else None
+    try:
+        import tkinter
+        from tkinter import filedialog
+    except ImportError:
+        raise ValueError("no file dialog available (tkinter missing); type the path instead")
+    root = tkinter.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)          # don't open behind the terminal
+    ask = filedialog.asksaveasfilename if save else filedialog.askopenfilename
+    chosen = ask(title=prompt, initialdir=str(Path.cwd()))
+    root.destroy()
+    return Path(chosen) if chosen else None
+
+
+BROWSE = "Finder" if sys.platform == "darwin" else "a file dialog"
 
 
 def _pick_path(prompt: str, exts: tuple[str, ...] = (), must_exist: bool = True) -> Path:
     """Ask for a file: pick a number from the list, type/drag a path, or press f
-    for a Finder dialog."""
+    for a file dialog."""
     files = _list_files(exts) if exts else []
     for i, p in enumerate(files, 1):
         where = p.parent.name if p.parent != REPO else "."
         print(f"     {i:>2}) {p.name}   ({where})")
-    hint = "number, path, or f for Finder" if files else "path, or f for Finder"
+    hint = f"number, path, or f for {BROWSE}" if files else f"path, or f for {BROWSE}"
     raw = _ask(f"{prompt} [{hint}]")
     if raw.isdigit() and files:
         n = int(raw)
@@ -154,7 +169,7 @@ def _pick_path(prompt: str, exts: tuple[str, ...] = (), must_exist: bool = True)
             raise ValueError(f"pick 1-{len(files)}")
         return files[n - 1]
     if raw.lower() == "f":
-        p = _finder_dialog(prompt, save=not must_exist)
+        p = _file_dialog(prompt, save=not must_exist)
         if p is None:
             raise ValueError("no file chosen")
         return p
@@ -167,15 +182,16 @@ def _ask_path(prompt: str, must_exist: bool = True) -> Path:
 
 def _resolve_path(raw: str, must_exist: bool = True) -> Path:
     """Turn typed text into a path. Accepts plain names with spaces, quoted or
-    backslash-escaped paths (as Finder drag-and-drop gives), and bare file
-    names that live in pedals/ or examples/."""
+    backslash-escaped paths (as Finder drag-and-drop gives), Windows paths
+    (C:\\...), and bare file names that live in pedals/ or examples/."""
     if not raw:
         raise ValueError("no path given")
     texts = [raw.strip()]
-    try:
-        texts.append(" ".join(shlex.split(raw)))     # unquote / unescape
-    except ValueError:
-        pass                                        # unbalanced quote: use as typed
+    if sys.platform != "win32":     # on Windows, backslashes are path separators
+        try:
+            texts.append(" ".join(shlex.split(raw)))     # unquote / unescape
+        except ValueError:
+            pass                                        # unbalanced quote: use as typed
     texts = [t.strip().strip("'\"") for t in texts]
 
     for text in texts:

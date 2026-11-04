@@ -22,6 +22,13 @@ from .chain import run_chain
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     cmd = argv[0] if argv else None
+    # Windows consoles can default to a code page without the box-drawing
+    # characters used for the chain; print UTF-8 and never crash on output.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     try:
         if cmd == "run":
             return _cmd_run(argv[1:])

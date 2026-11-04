@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..netlist import decode
 from .base import SRC_NODE, Backend, SimulationError
 
 _MAC_APPS = [
@@ -15,8 +16,11 @@ _MAC_APPS = [
     Path("/Applications/LTspice.app"),
 ]
 _WIN_EXES = [
+    # LTspice 24+ installs per-user by default, or machine-wide
+    Path(os.environ.get("LOCALAPPDATA", "C:/nonexistent")) / "Programs/ADI/LTspice/LTspice.exe",
+    Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "ADI/LTspice/LTspice.exe",
     Path(r"C:\Program Files\ADI\LTspice\LTspice.exe"),
-    Path(r"C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe"),
+    Path(r"C:\Program Files\LTC\LTspiceXVII\XVIIx64.exe"),      # LTspice XVII
 ]
 _BOTTLE_EXE = r"C:\Program Files\ADI\LTspice\LTspice.exe"
 
@@ -52,7 +56,8 @@ class LTspice:
 
     def run(self, *args: str | Path, cwd: Path | None = None, timeout: float | None = None):
         return subprocess.run(self.command(*args), cwd=cwd, env=self.env(),
-                              capture_output=True, text=True, timeout=timeout)
+                              capture_output=True, text=True, errors="replace",
+                              timeout=timeout)
 
 
 def find_ltspice() -> LTspice | None:
@@ -67,7 +72,9 @@ def find_ltspice() -> LTspice | None:
         native = app / "Contents/MacOS/LTspice"
         if native.exists():
             return LTspice(exe=native)
-    return next((LTspice(exe=p) for p in _WIN_EXES if p.exists()), None)
+    if os.name == "nt":
+        return next((LTspice(exe=p) for p in _WIN_EXES if p.exists()), None)
+    return None
 
 
 class LTspiceBackend(Backend):
@@ -98,14 +105,14 @@ class LTspiceBackend(Backend):
             ".options plotwinsize=0 numdgt=15",   # no waveform compression, doubles
             ".end",
         ]
-        deck.write_text("\n".join(lines) + "\n")
+        deck.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
         proc = self.lt.run("-b", deck, cwd=workdir)
         if not raw.exists():
-            detail = log.read_text(errors="replace") if log.exists() else proc.stderr
+            detail = decode(log.read_bytes()) if log.exists() else proc.stderr
             raise SimulationError(f"LTspice failed:\n{detail[-1500:]}")
         if log.exists():
-            text = log.read_text(errors="replace")
+            text = decode(log.read_bytes())       # UTF-16 on some LTspice versions
             if re.search(r"\berror\b|singular matrix|time step too small|analysis aborted|unknown (subcircuit|model)", text, re.I):
                 raise SimulationError(f"LTspice reported a problem (see {log}):\n{text[-1500:]}")
         return read_raw(raw, f"v({out_node})")

@@ -6,6 +6,8 @@
     python3 run.py run examples/board.yaml
     python3 run.py chain in.wav a.asc b.asc -o out.wav
 
+On Windows use "py run.py" (or "python run.py") instead of "python3 run.py".
+
 On first run, if numpy/soundfile/pyyaml aren't importable, this creates a
 .venv next to this file, installs requirements.txt into it, and re-runs itself
 with that Python.

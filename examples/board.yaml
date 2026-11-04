@@ -1,0 +1,12 @@
+input: guitar.wav
+output: out.wav
+backend: ngspice
+build_dir: build
+pedals:
+  - file: pedals/clipper.cir
+    in_volts: 0.5
+    params: { gain: 30 }
+  - file: pedals/tone.cir
+    params: { tone: 0.4 }
+  - file: pedals/volume.cir
+    params: { level: 0.8 }

@@ -1,0 +1,27 @@
+* SpiceChain fallback models.
+* Used only when a pedal references a part that isn't defined in the pedal
+* itself or in LTspice's libraries. These are approximate, typical-datasheet
+* models, not manufacturer models. Replace them with real ones if you have them.
+
+* 2N5484: N-channel JFET, Vgs(off) ~ -0.3..-3 V, Idss ~ 1..5 mA
+.model 2N5484 NJF(Vto=-1.2 Beta=1.2m Lambda=4m Rd=1 Rs=1 Is=1f Cgs=4p Cgd=3p Pb=0.6 Fc=0.5)
+
+* 2N4126: general purpose PNP, hFE ~ 120..360
+.model 2N4126 PNP(Is=10f Bf=200 Vaf=50 Br=4 Rb=10 Rc=1 Re=0.5 Cje=8p Cjc=10p Tf=0.5n Tr=30n Ikf=80m)
+
+* Generic op-amp (pins: In+ In- V+ V- OUT), roughly TL07x/TL08x class:
+* 100 dB open-loop gain, ~3 MHz GBW, output swings to ~1.5 V from the rails.
+* Used by the ngspice backend in place of LTspice-only op-amp models.
+.subckt SPICECHAIN_OPAMP inp inn vcc vee out
+Rin inp inn 1e12
+G1 0 n1 inp inn 1m
+R1 n1 0 100Meg
+C1 n1 0 53p
+Vhi vcc nhi 1.5
+Vlo nlo vee 1.5
+Dhi n1 nhi SPICECHAIN_DCLAMP
+Dlo nlo n1 SPICECHAIN_DCLAMP
+E1 n2 0 n1 0 1
+Rout n2 out 50
+.model SPICECHAIN_DCLAMP D(Is=1e-14 N=0.05)
+.ends SPICECHAIN_OPAMP

@@ -1,0 +1,11 @@
+* Diode clipper: gain stage into a pair of silicon diodes
+.param gain=20
+C1 in a 100n
+R0 a 0 1Meg
+E1 b 0 a 0 {gain}
+R1 b out 2.2k
+D1 out 0 D1N4148
+D2 0 out D1N4148
+.model D1N4148 D(Is=2.52n Rs=0.568 N=1.752 Cjo=4p M=0.4 tt=20n)
+.tran 0 10m
+.end

@@ -1,0 +1,5 @@
+* Volume: resistive divider, level 0..1
+.param level=0.7
+R1 in out {10k*(1-level) + 1}
+R2 out 0 {10k*level + 1}
+.end

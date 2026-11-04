@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spicechain"
+version = "0.1.0"
+description = "Run audio files through chains of SPICE pedal circuits"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy", "soundfile", "pyyaml"]
+
+[project.scripts]
+spicechain = "spicechain.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["spicechain*"]
+
+[tool.setuptools.package-data]
+"spicechain.models" = ["*.lib"]

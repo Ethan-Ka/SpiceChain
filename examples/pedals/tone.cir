@@ -1,0 +1,5 @@
+* Tone: RC low-pass, tone=0 is dark, tone=1 is bright
+.param tone=0.5
+R1 in out {22k - tone*21k}
+C1 out 0 10n
+.end

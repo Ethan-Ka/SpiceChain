@@ -14,4 +14,4 @@ TAGLINE = "for Boiler Guitar Shop"
 
 def banner() -> str:
     """The SpiceChain title with the tagline under it."""
-    return TITLE.strip("\n") + "\n\n" + TAGLINE
+    return TITLE.strip("\n")
